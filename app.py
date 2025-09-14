@@ -71,6 +71,52 @@ def get_all_rooms():
     # Return the list of rooms as a JSON response
     return jsonify({'rooms': output})
 
+@app.route('/api/rooms/<int:room_id>', methods=['PUT'])
+def update_room(room_id):
+    """
+    This endpoint updates the details of a specific room.
+    """
+    # --- DEBUGGING STARTS HERE ---
+    print(f"--- Attempting to update room with ID: {room_id} ---")
+    print(f"Type of ID received: {type(room_id)}")
+    
+    room = Room.query.get(room_id) # Using .get() instead of get_or_404 for now
+    
+    print(f"Result from database query: {room}")
+    # --- DEBUGGING ENDS HERE ---
+
+    if not room:
+        return jsonify({'message': 'Room not found with that ID'}), 404
+
+    data = request.get_json()
+
+    if not data:
+        return jsonify({'message': 'No input data provided'}), 400
+
+    room.name = data.get('name', room.name)
+    room.status = data.get('status', room.status)
+    
+    db.session.commit()
+    
+    return jsonify({'message': 'Room updated successfully', 'room': {'id': room.id, 'name': room.name, 'status': room.status}})
+
+@app.route('/api/rooms/<int:room_id>', methods=['DELETE'])
+def delete_room(room_id):
+    """
+    This endpoint deletes a specific room from the database.
+    """
+    # Find the specific room, or return a 404 if it's not found
+    room = Room.query.get_or_404(room_id)
+    
+    # Delete the room from the database session
+    db.session.delete(room)
+    
+    # Commit the change to make it permanent
+    db.session.commit()
+    
+    # Return a success message
+    return jsonify({'message': 'Room deleted successfully'})
+
 # --- This block allows you to run the app directly ---
 if __name__ == '__main__':
     app.run(debug=True)
